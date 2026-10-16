@@ -121,17 +121,29 @@ def evaluate(
 
 
 def verdict(table: pd.DataFrame) -> list[str]:
-    """One plain line per lead: does MOS beat raw NWP and the lag-only model trained on the same window?"""
+    """One plain line per lead. "Useful" needs MOS to beat CLIMATOLOGY on RMSE and have positive Brier skill.
+
+    Beating raw NWP alone proves little: raw NWP at a point is not bias-corrected and can be worse than
+    climatology. Heavy rain is reported separately because averaging models tend to flatten it.
+    """
     out = []
     for k, g in table.groupby("lead"):
         r = g.set_index("forecast")["rmse"]
-        c = g.set_index("forecast")["csi@2.5"]
-        beats_nwp = r["xgb_mos"] < r["raw_nwp"]
-        beats_lag = r["xgb_mos"] < r["xgb_lag_recent"]
+        heavy = g.set_index("forecast")["csi@15.6"]
+        bs = float(str(g.set_index("forecast").loc["xgb_mos", "brier_skill_1mm"]))
+        skill = 1.0 - r["xgb_mos"] / r["climatology"]
+        # Usable: clear gain on both measures. Marginal: a gain on only one, or a tiny one. Otherwise none.
+        level = "usable" if skill >= 0.02 and bs >= 0.05 else "marginal" if skill > 0 or bs > 0 else "no usable"
+        heavy_note = (
+            "raw NWP is better at heavy rain"
+            if heavy["raw_nwp"] > heavy["xgb_mos"]
+            else "MOS is not worse at heavy rain"
+        )
         out.append(
-            f"lead {k}d: RMSE mos {r['xgb_mos']:.2f} | raw NWP {r['raw_nwp']:.2f} | lag-only(recent) {r['xgb_lag_recent']:.2f}"
-            f" | clim {r['climatology']:.2f} || CSI@2.5 mos {c['xgb_mos']:.2f} vs NWP {c['raw_nwp']:.2f}"
-            f" -> MOS {'beats' if beats_nwp else 'does NOT beat'} raw NWP; {'beats' if beats_lag else 'does NOT beat'} lag-only"
+            f"lead {k}d: MOS RMSE skill vs climatology {skill:+.1%} | Brier skill {bs:+.2f}"
+            f" | RMSE mos {r['xgb_mos']:.2f}, raw NWP {r['raw_nwp']:.2f}, lag-only {r['xgb_lag_recent']:.2f}, clim {r['climatology']:.2f}"
+            f" | CSI@15.6mm mos {heavy['xgb_mos']:.2f} vs NWP {heavy['raw_nwp']:.2f} ({heavy_note})"
+            f" -> MOS has {level} skill over climatology"
         )
     return out
 

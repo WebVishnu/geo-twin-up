@@ -12,9 +12,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import geopandas as gpd  # noqa: E402
+import geopandas as gpd
 
-from src.ingest import nwp  # noqa: E402
+from src.ingest import nwp
 
 if __name__ == "__main__":
     start = sys.argv[1] if len(sys.argv) > 1 else "2024-01-01"

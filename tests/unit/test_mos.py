@@ -64,7 +64,7 @@ def test_verdict_has_one_line_per_lead() -> None:
     rain, nwp, cen = synth()
     w = mos.MosWindow("2024-01-01", "2024-12-31", "2025-01-01")
     lines = mos.verdict(mos.evaluate(rain, nwp, cen, w, leads=(1, 3), n_estimators=30))
-    assert len(lines) == 2 and all("MOS" in ln for ln in lines)
+    assert len(lines) == 2 and all("MOS" in ln and "climatology" in ln for ln in lines)
 
 
 def test_no_test_rows_is_an_error() -> None:
