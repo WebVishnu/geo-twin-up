@@ -9,5 +9,5 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-      - run: pip install pandas numpy pyarrow pyyaml requests pytest scipy xarray
+      - run: pip install -r requirements.txt
       - run: python -m pytest tests/unit -q
