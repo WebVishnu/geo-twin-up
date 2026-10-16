@@ -33,6 +33,8 @@ def test_schema_and_leads(tmp_path):
     p = fl.run(tmp_path, step=2.0, fetch=fake_fetch, today=TODAY, sleep_s=0)
     df = pd.read_parquet(p)
     assert {"issue_date", "lead_day", "valid_date", "lat", "lon", "precip", "tmax", "tmin"} <= set(df)
+    assert df.grid_lat.nunique() * df.grid_lon.nunique() >= df.groupby(["grid_lat", "grid_lon"]).ngroups
+    assert len(fl.make_grid(2.0)) == df.groupby(["grid_lat", "grid_lon"]).ngroups
     assert sorted(df.lead_day.unique()) == list(range(fl.FORECAST_DAYS))
     # no leakage: valid date is never before the issue date
     assert (pd.to_datetime(df.valid_date) >= pd.Timestamp(TODAY)).all()

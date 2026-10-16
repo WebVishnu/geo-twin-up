@@ -56,9 +56,12 @@ def fetch_batch(points: list[tuple[float, float]], session: requests.Session | N
     raise RuntimeError(f"Open-Meteo request failed after retries: {last_err}")
 
 
-def to_frame(results: list[dict], issue_date: dt.date) -> pd.DataFrame:
+def to_frame(results: list[dict], issue_date: dt.date, points: list[tuple[float, float]] | None = None) -> pd.DataFrame:
+    """`points` are the requested grid coords (same order as results). Open-Meteo snaps
+    returned lat/lon to its own model grid, so we keep the requested ones as `grid_lat/grid_lon`
+    for joining with IMD cells."""
     rows = []
-    for res in results:
+    for i, res in enumerate(results):
         d = res["daily"]
         df = pd.DataFrame(
             {
@@ -70,12 +73,13 @@ def to_frame(results: list[dict], issue_date: dt.date) -> pd.DataFrame:
         )
         df["lat"] = res["latitude"]
         df["lon"] = res["longitude"]
+        df["grid_lat"], df["grid_lon"] = points[i] if points else (res["latitude"], res["longitude"])
         rows.append(df)
     out = pd.concat(rows, ignore_index=True)
     out["issue_date"] = issue_date
     out["lead_day"] = (pd.to_datetime(out["valid_date"]) - pd.Timestamp(issue_date)).dt.days
     out["source"] = "open-meteo"
-    return out[["issue_date", "lead_day", "valid_date", "lat", "lon", "precip", "tmax", "tmin", "source"]]
+    return out[["issue_date", "lead_day", "valid_date", "grid_lat", "grid_lon", "lat", "lon", "precip", "tmax", "tmin", "source"]]
 
 
 def run(
@@ -99,7 +103,7 @@ def run(
         results.extend(fetch(pts[i : i + BATCH]))
         if sleep_s:
             time.sleep(sleep_s)
-    df = to_frame(results, issue_date)
+    df = to_frame(results, issue_date, pts)
     tmp = target.with_suffix(".tmp")
     df.to_parquet(tmp, index=False)
     tmp.replace(target)  # atomic: no half-written files
