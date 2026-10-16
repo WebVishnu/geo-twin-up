@@ -7,6 +7,8 @@ Hyper-parameters are tuned on the VALIDATION split only; the test split is touch
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 import xgboost as xgb
@@ -46,20 +48,20 @@ class HurdleXGB:
         return self
 
     def predict_proba_wet(self, X: pd.DataFrame) -> np.ndarray:
-        return self.clf.predict_proba(X)[:, 1]
+        return np.asarray(self.clf.predict_proba(X)[:, 1], dtype=np.float64)
 
     def predict_amount_if_wet(self, X: pd.DataFrame) -> np.ndarray:
-        return np.expm1(np.clip(self.reg.predict(X), 0, None))
+        return np.asarray(np.expm1(np.clip(self.reg.predict(X), 0, None)), dtype=np.float64)
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
         """Expected rainfall (mm)."""
-        return self.predict_proba_wet(X) * self.predict_amount_if_wet(X)
+        return np.asarray(self.predict_proba_wet(X) * self.predict_amount_if_wet(X), dtype=np.float64)
 
 
-def fit_per_lead(feats: pd.DataFrame, train_mask: np.ndarray, **kw) -> dict[int, HurdleXGB]:
-    models = {}
+def fit_per_lead(feats: pd.DataFrame, train_mask: np.ndarray, **kw: Any) -> dict[int, HurdleXGB]:
+    models: dict[int, HurdleXGB] = {}
     for k, g in feats[train_mask].groupby("lead"):
-        models[int(k)] = HurdleXGB(**kw).fit(g[FEATURE_COLS], g["y"].to_numpy())
+        models[int(str(k))] = HurdleXGB(**kw).fit(g[FEATURE_COLS], g["y"].to_numpy())
     return models
 
 

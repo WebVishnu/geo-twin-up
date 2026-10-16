@@ -14,6 +14,7 @@ import datetime as dt
 import time
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -22,22 +23,22 @@ import requests
 API_URL = "https://api.open-meteo.com/v1/forecast"
 DAILY_VARS = ["precipitation_sum", "temperature_2m_max", "temperature_2m_min"]
 # Bounding box of Uttar Pradesh (clipped to the state polygon later, in T5).
-UP_BBOX = {"lat_min": 23.8, "lat_max": 30.4, "lon_min": 77.1, "lon_max": 84.7}
+UP_BBOX: dict[str, float] = {"lat_min": 23.8, "lat_max": 30.4, "lon_min": 77.1, "lon_max": 84.7}
 DEFAULT_OUT = Path("data/raw/forecast_log")
 BATCH = 50
 FORECAST_DAYS = 8  # lead 0..7
 
 
-def make_grid(step: float = 0.25, bbox: dict = UP_BBOX) -> list[tuple[float, float]]:
+def make_grid(step: float = 0.25, bbox: dict[str, float] = UP_BBOX) -> list[tuple[float, float]]:
     lats = np.round(np.arange(bbox["lat_min"], bbox["lat_max"] + 1e-9, step), 4)
     lons = np.round(np.arange(bbox["lon_min"], bbox["lon_max"] + 1e-9, step), 4)
     return [(float(a), float(o)) for a in lats for o in lons]
 
 
-def fetch_batch(points: list[tuple[float, float]], session: requests.Session | None = None) -> list[dict]:
+def fetch_batch(points: list[tuple[float, float]], session: requests.Session | None = None) -> list[dict[str, Any]]:
     """Call Open-Meteo for up to BATCH points; always returns a list of per-point dicts."""
     s = session or requests
-    params = {
+    params: dict[str, str | int | float] = {
         "latitude": ",".join(str(p[0]) for p in points),
         "longitude": ",".join(str(p[1]) for p in points),
         "daily": ",".join(DAILY_VARS),
@@ -57,7 +58,9 @@ def fetch_batch(points: list[tuple[float, float]], session: requests.Session | N
     raise RuntimeError(f"Open-Meteo request failed after retries: {last_err}")
 
 
-def to_frame(results: list[dict], issue_date: dt.date, points: list[tuple[float, float]] | None = None) -> pd.DataFrame:
+def to_frame(
+    results: list[dict[str, Any]], issue_date: dt.date, points: list[tuple[float, float]] | None = None
+) -> pd.DataFrame:
     """`points` are the requested grid coords (same order as results). Open-Meteo snaps
     returned lat/lon to its own model grid, so we keep the requested ones as `grid_lat/grid_lon`
     for joining with IMD cells."""
@@ -101,7 +104,7 @@ def run(
     out_dir: Path = DEFAULT_OUT,
     step: float = 0.25,
     force: bool = False,
-    fetch: Callable[[list[tuple[float, float]]], list[dict]] = fetch_batch,
+    fetch: Callable[[list[tuple[float, float]]], list[dict[str, Any]]] = fetch_batch,
     today: dt.date | None = None,
     sleep_s: float = 0.5,
 ) -> Path | None:
@@ -113,7 +116,7 @@ def run(
     if target.exists() and not force:
         return None
     pts = make_grid(step)
-    results: list[dict] = []
+    results: list[dict[str, Any]] = []
     for i in range(0, len(pts), BATCH):
         results.extend(fetch(pts[i : i + BATCH]))
         if sleep_s:

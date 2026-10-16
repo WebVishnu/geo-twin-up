@@ -73,6 +73,39 @@ def load_forecast() -> tuple[pd.DataFrame, str | None]:
     return agg, str(pd.to_datetime(fc["issue_date"].iloc[0]).date())
 
 
+@st.cache_data(show_spinner=False)
+def load_temp() -> pd.DataFrame:
+    """Daily district tmax/tmin (ERA5-Land at district centre points): [district_id, date, tmax, tmin]."""
+    p = PROCESSED / "district_temp_all.parquet"
+    if not p.exists():
+        return pd.DataFrame(columns=["district_id", "date", "tmax", "tmin"])
+    return pd.read_parquet(p, columns=["district_id", "date", "tmax", "tmin"])
+
+
+def temp_series(temp: pd.DataFrame, district_id: int | None) -> pd.Series:
+    """Daily tmax for one district, or the UP average when district_id is None."""
+    sub = temp if district_id is None else temp[temp.district_id == district_id]
+    s = sub.groupby("date")["tmax"].mean()
+    s.index = pd.DatetimeIndex(s.index)
+    return s.sort_index()
+
+
+def temp_ready(temp: pd.DataFrame, rain_series: pd.Series, min_years: int = 30) -> bool:
+    """Temperature is usable only if it spans (almost) the same years as rainfall and has enough baseline."""
+    if temp.empty:
+        return False
+    ty = set(pd.DatetimeIndex(pd.to_datetime(temp["date"])).year)
+    ry = set(pd.DatetimeIndex(rain_series.index).year)
+    return len(ty & ry) >= min_years
+
+
+def synthetic_tmax(years: int = 40, seed: int = 8) -> pd.Series:
+    """Demo tmax with a seasonal cycle (paired with synthetic_rain; labelled as demo in the UI)."""
+    rng = np.random.default_rng(seed)
+    idx = pd.date_range("1981-01-01", periods=365 * years, freq="D")
+    return pd.Series(28 + 10 * np.sin(2 * np.pi * (idx.dayofyear - 90) / 365) + rng.normal(0, 2.0, len(idx)), index=idx)
+
+
 def years_available(rain: pd.DataFrame) -> int:
     return int(pd.to_datetime(rain["date"]).dt.year.nunique()) if len(rain) else 0
 

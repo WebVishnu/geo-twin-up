@@ -14,9 +14,9 @@ INDICATORS = ["jjas_ratio_to_lpa", "spi3_monsoon_mean", "rx1day_mm", "rx5day_mm"
 
 
 @st.cache_resource(show_spinner="...")
-def _engine(key: str, series: pd.Series) -> WhatIfEngine:
+def _engine(key: str, series: pd.Series, tmax: pd.Series | None) -> WhatIfEngine:
     yrs = sorted(set(series.index.year))
-    return WhatIfEngine(series, None, baseline_years=(yrs[0], yrs[-1]), n_boot=150)
+    return WhatIfEngine(series, tmax, baseline_years=(yrs[0], yrs[-1]), n_boot=150)
 
 
 def _fmt(name: str, v: float) -> str:
@@ -48,12 +48,16 @@ def render(t) -> None:
     area = st.selectbox(
         t("area"), [0, *sorted(label, key=label.get)], format_func=lambda i: t("all_up") if i == 0 else label[i]
     )
+    temp = data.load_temp()
     if demo and have < MIN_YEARS:
-        series, key = data.synthetic_rain(), "demo"
+        series, tmax, key = data.synthetic_rain(), data.synthetic_tmax(), "demo"
     elif area == 0:
         series, key = data.state_series(rain), "all"
+        tmax = data.temp_series(temp, None) if data.temp_ready(temp, series) else None
     else:
         series, key = data.district_series(rain, area), f"d{area}"
+        tmax = data.temp_series(temp, area) if data.temp_ready(temp, series) else None
+    key += "T" if tmax is not None else "R"
 
     st.session_state.setdefault("dp", 0)
     st.session_state.setdefault("ex", 0)
@@ -69,12 +73,13 @@ def render(t) -> None:
     c1, c2, c3 = st.columns(3)
     dp = c1.slider(t("rain_change"), -50, 50, key="dp", step=5)
     ex = c2.slider(t("heavy_change"), -30, 50, key="ex", step=5)
-    tp = c3.slider(t("temp_change"), -5.0, 5.0, key="tp", step=0.5, disabled=True)
-    st.caption(t("temp_missing"))
-    del tp
+    tp = c3.slider(t("temp_change"), -5.0, 5.0, key="tp", step=0.5, disabled=tmax is None)
+    st.caption(t("temp_source") if tmax is not None else t("temp_missing"))
 
-    eng = _engine(key, series)
-    res = eng.run(Scenario(rain_factor=dp / 100, extreme_factor=ex / 100, temp_delta=0.0))
+    eng = _engine(key, series, tmax)
+    res = eng.run(
+        Scenario(rain_factor=dp / 100, extreme_factor=ex / 100, temp_delta=float(tp) if tmax is not None else 0.0)
+    )
 
     years = [int(y) for y in res.baseline.index]
     fig = charts.ratio_chart(

@@ -61,3 +61,4 @@ def test_whatif_demo_mode_is_labelled_and_works(monkeypatch: pytest.MonkeyPatch)
     assert not at.exception
     html = " ".join(m.value for m in at.markdown)
     assert "gt-demo" in html and "Sensitivity analysis" in html
+    assert "Heat-wave days per year" in html  # demo series include temperature, so the heat row is shown
