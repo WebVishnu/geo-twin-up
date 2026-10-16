@@ -7,8 +7,9 @@ __pycache__/
 data/raw/*
 data/interim/
 data/processed/
-data/external/
+data/external/*
 !data/raw/forecast_log/
 !data/raw/forecast_log/.gitkeep
 *.nc
 *.grd
+!data/external/up_districts.geojson
