@@ -25,3 +25,9 @@ python scripts/build_district_data.py   # after scripts/download_imd.py has cach
 streamlit run app/Home.py
 ```
 Language switch (English / हिन्दी) is in the sidebar. The what-if page needs >= 30 years of IMD data; until then it offers an explicitly labelled synthetic demo.
+
+## Results and documents
+- Live dashboard: see the Streamlit link in the repository description.
+- `docs/validation_report.md`: forecast verification (generated from the metrics CSVs).
+- `docs/claims_audit.md`: synopsis claims we corrected or could not verify.
+- `docs/DEPLOY.md`: how the app is deployed and refreshed.

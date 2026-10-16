@@ -16,7 +16,7 @@ we recommend instead. Status as of October 2026. "Verify" means we could not con
 | 9 | GAEA "still has not delivered what-if" [7] | **Too strong.** The full text lists interactive what-if as a user request and planned extension, and mentions IPCC-scenario risk views. | "GAEA identifies interactive what-if simulation as an open challenge." Check the author list in ref [7] against arXiv 2511.13807. |
 | 10 | Pipeline loops back to re-tune features if validation is "not acceptable" | **Leakage risk.** Tuning against test data inflates results. | Tune on a validation period only. Score the test period once. Our code does this. |
 | 11 | Fusing IMD and MOSDAC is the main contribution | **High risk.** MOSDAC needs approval and large downloads for little gain in a first prototype. | MOSDAC is a stretch goal, not a dependency. |
-| 12 | XGBoost + LSTM gives useful short-term forecasts | **Our own result says: only for about 1-3 days, and only against climatology.** On the provisional test split the seasonal-reference Brier skill was 0.23 at 1 day, 0.05 at 3 days and 0.01 at 7 days; heavy-rain detection was near zero. | Report this table. Beyond about 3 days the forecast layer is the weather model's own output. |
+| 12 | XGBoost + LSTM gives useful short-term forecasts | **Our own final result: only for the next day.** On the final test years (2024-2025) the rainfall-history model had RMSE skill vs climatology of +5.5% at 1 day, -1.6% at 3 days and -2.1% at 7 days (Brier skill 0.15, 0.01, -0.02). Adding weather-model (NWP) forecasts gave +9.5% at 1 day, about 0% at 3 days and -2.9% at 7 days (2025 only). Heavy-rain detection is poor. The LSTM was not built: the evidence did not justify it. | Quote the tables in `docs/validation_report.md`. Beyond 1 to 3 days the forecast layer is the weather model's own output. |
 | 13 | "Continuously updated" platform | **Not true.** It updates once a day in a batch. | "Daily batch update." Never say "real-time". |
 | 14 | Digital twin | **Strictly, no.** There is no automatic two-way flow with the physical system. | "Digital-twin-style decision-support prototype." |
 
@@ -24,7 +24,7 @@ we recommend instead. Status as of October 2026. "Verify" means we could not con
 - Items 1, 9, 13, 14: wording is fixed in the app's Method page (English and Hindi).
 - Items 2, 3: not used anywhere in the app.
 - Item 10: splits are year-blocked from `configs/base.yaml`; the pipeline prints PROVISIONAL when configured years are missing.
-- Item 12: `reports/metrics.csv` and `reports/mos_metrics.csv` are the evidence.
+- Item 12: `docs/validation_report.md` (generated from `reports/metrics.csv` and `reports/mos_metrics.csv`) is the evidence.
 
 ## Still to verify by hand (do before submission)
 - The IMD UP AI pilot on a PIB or IMD page.
