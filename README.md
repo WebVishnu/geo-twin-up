@@ -18,3 +18,10 @@ python -m pytest tests/unit -q
 3. Never commit credentials. Earthdata: set `EARTHDATA_USER` / `EARTHDATA_PASS` locally or as GitHub Secrets.
 
 Docs: planning files are in the parent project's `reports/` folder.
+
+## Dashboard
+```powershell
+python scripts/build_district_data.py   # after scripts/download_imd.py has cached some years
+streamlit run app/Home.py
+```
+Language switch (English / हिन्दी) is in the sidebar. The what-if page needs >= 30 years of IMD data; until then it offers an explicitly labelled synthetic demo.
