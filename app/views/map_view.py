@@ -19,6 +19,11 @@ def _selected_from_event(event: object) -> int | None:
     return int(loc) if loc is not None else None
 
 
+def _n(v: float) -> str:
+    """Thousands separator for big values, one decimal for small ones (0.3 mm must not read as 0)."""
+    return f"{v:,.0f}" if abs(v) >= 10 else f"{v:,.1f}"
+
+
 def render(t) -> None:
     gj, names = data.load_geo()
     rain = data.load_rain()
@@ -39,11 +44,19 @@ def render(t) -> None:
             st.info(t("no_obs"))
             return
         last = pd.to_datetime(rain["date"]).max()
+        # Default to the latest full monsoon: "the last 30 days" of a dry winter shows 0 mm everywhere.
+        monsoon_year = last.year if last.month >= 9 else last.year - 1
         with c_period:
-            span = st.select_slider(
-                t("period"), options=[7, 14, 30, 60, 90], value=30, format_func=lambda n: t("period_days", n=n)
+            span = st.selectbox(
+                t("period"),
+                ["monsoon", 30, 7, 14, 60, 90],
+                format_func=lambda n: t("period_monsoon", y=monsoon_year) if n == "monsoon" else t("period_days", n=n),
             )
-        win = rain[pd.to_datetime(rain["date"]) > last - pd.Timedelta(days=span)]
+        dts = pd.to_datetime(rain["date"])
+        if span == "monsoon":
+            win = rain[(dts.dt.year == monsoon_year) & dts.dt.month.between(6, 9)]
+        else:
+            win = rain[dts > last - pd.Timedelta(days=int(span))]
         agg = (
             win.groupby(["district_id", "district"], as_index=False)["rain_mm"]
             .sum()
@@ -67,11 +80,24 @@ def render(t) -> None:
 
     agg["rank"] = agg["value"].rank(ascending=False, method="min").astype(int)
     sel = st.session_state.get("sel_district")
+    # If every district has the same value (e.g. a dry fortnight: 0 mm everywhere) a colour scale and a
+    # "rank 1 of 75" would be meaningless, so say so instead.
+    flat = float(agg["value"].max()) == float(agg["value"].min())
+    zlim = {"zmin": 0.0, "zmax": max(1.0, float(agg["value"].max()))} if flat else {}
 
     left, right = st.columns([1.55, 1], gap="large")
     with left:
-        fig = charts.district_map(gj, agg, "value", unit_title, selected=sel)
-        event = st.plotly_chart(fig, on_select="rerun", selection_mode="points", key="map", width="stretch")
+        if flat:
+            st.info(t("no_rain_period"))
+        fig = charts.district_map(gj, agg, "value", unit_title, selected=sel, **zlim)
+        event = st.plotly_chart(
+            fig,
+            on_select="rerun",
+            selection_mode="points",
+            key="map",
+            width="stretch",
+            config={"displayModeBar": False},
+        )
         clicked = _selected_from_event(event)
         if clicked is not None and clicked != sel:
             st.session_state["sel_district"] = clicked
@@ -93,7 +119,7 @@ def render(t) -> None:
         mean_all = float(agg["value"].mean())
         if sel is None or sel not in set(agg["district_id"]):
             st.markdown(
-                f"<div class='gt-stat'><div class='v'>{mean_all:,.0f}</div><div class='l'>{t('state_avg')} · {unit_title}</div></div>",
+                f"<div class='gt-stat'><div class='v'>{_n(mean_all)}</div><div class='l'>{t('state_avg')} · {unit_title}</div></div>",
                 unsafe_allow_html=True,
             )
             st.caption(t("no_district"))
@@ -101,11 +127,12 @@ def render(t) -> None:
         row = agg[agg.district_id == sel].iloc[0]
         st.markdown(f"### {row['district']}")
         st.markdown(
-            f"<div class='gt-stat'><div class='v'>{row['value']:,.0f}</div><div class='l'>{t('total')} · {unit_title}</div></div>",
+            f"<div class='gt-stat'><div class='v'>{_n(float(row['value']))}</div><div class='l'>{t('total')} · {unit_title}</div></div>",
             unsafe_allow_html=True,
         )
+        rank_txt = "" if flat else f"{t('rank', r=int(row['rank']), n=len(agg))} · "
         st.markdown(
-            f"<div class='gt-muted'>{t('rank', r=int(row['rank']), n=len(agg))} · {t('state_avg')}: {mean_all:,.0f}</div>",
+            f"<div class='gt-muted'>{rank_txt}{t('state_avg')}: {_n(mean_all)}</div>",
             unsafe_allow_html=True,
         )
         d, v = daily(sel)

@@ -35,11 +35,12 @@ h2, h3 {{ font-weight: 600; color: {INK}; }}
 .gt-stat {{ border-top: 2px solid {INK}; padding-top: .5rem; margin-bottom: 1rem; }}
 .gt-stat .v {{ font-size: 2.3rem; font-weight: 800; line-height: 1; }}
 .gt-stat .l {{ color: {MUTED}; font-size: .95rem; margin-top: .25rem; }}
-.gt-muted {{ color: {MUTED}; font-size: .92rem; }}
+.gt-muted {{ color: {MUTED}; font-size: .92rem; margin-bottom: .7rem; }}
 .gt-row {{ display: flex; justify-content: space-between; gap: 1rem; border-bottom: 1px solid {RULE}; padding: .45rem 0; }}
 .gt-row .n {{ flex: 1; }} .gt-row .b {{ color: {MUTED}; min-width: 5.5rem; text-align: right; }}
 .gt-row .a {{ font-weight: 600; min-width: 5.5rem; text-align: right; }}
 .gt-row .d {{ min-width: 5.5rem; text-align: right; font-weight: 600; }}
+.gt-row .d .ci {{ display: block; font-weight: 400; color: {MUTED}; font-size: .78rem; }}
 .gt-head {{ color: {MUTED}; font-size: .88rem; border-bottom: 2px solid {INK}; }}
 section[data-testid="stSidebar"] {{ background: #EAF1F1; border-right: 1px solid {RULE}; }}
 :focus-visible {{ outline: 3px solid {RIVER} !important; outline-offset: 2px; }}

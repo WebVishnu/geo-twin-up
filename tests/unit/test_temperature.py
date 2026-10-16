@@ -19,7 +19,7 @@ def fake_fetch(lat: float, lon: float, start: str, end: str) -> pd.DataFrame:
 
 def test_plan_chunks_covers_all_years_without_overlap() -> None:
     ch = T.plan_chunks(points(1), 1991, 2025, years_per_chunk=5)
-    assert [(c.start_year, c.end_year) for c in ch][0] == (1991, 1995)
+    assert next((c.start_year, c.end_year) for c in ch) == (1991, 1995)
     assert [(c.start_year, c.end_year) for c in ch][-1] == (2021, 2025)
     spans = [(c.start_year, c.end_year) for c in ch]
     assert sum(b - a + 1 for a, b in spans) == 35

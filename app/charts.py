@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pandas as pd
 import plotly.graph_objects as go
 
@@ -9,15 +11,20 @@ from app import style
 
 
 def district_map(
-    gj: dict,
+    gj: dict[str, Any],
     df: pd.DataFrame,
     value_col: str,
     colorbar_title: str,
     selected: int | None = None,
     scale: list[str] | None = None,
     zmid: float | None = None,
+    zmin: float | None = None,
+    zmax: float | None = None,
 ) -> go.Figure:
-    """Borderless map of the 75 districts. No basemap: the district shapes are the map."""
+    """Borderless map of the 75 districts. No basemap: the district shapes are the map.
+
+    Pass zmin/zmax to pin the colour range, e.g. 0..1 when every district has the same value.
+    """
     fig = go.Figure(
         go.Choropleth(
             geojson=gj,
@@ -25,6 +32,8 @@ def district_map(
             featureidkey="properties.district_id",
             z=df[value_col],
             zmid=zmid,
+            zmin=zmin,
+            zmax=zmax,
             colorscale=scale or style.RAIN_SCALE,
             marker_line_color="white",
             marker_line_width=0.6,
@@ -90,7 +99,7 @@ def daily_bars(
         plot_bgcolor="rgba(0,0,0,0)",
         font={"family": "Mukta, sans-serif", "color": style.INK},
         xaxis={"showgrid": False, "tickformat": "%d %b"},
-        yaxis={"gridcolor": style.RULE, "zeroline": False, "title": None},
+        yaxis={"gridcolor": style.RULE, "zeroline": False, "title": None, "rangemode": "tozero"},
         showlegend=False,
         bargap=0.15,
     )
@@ -104,8 +113,14 @@ def ratio_chart(
     fig = go.Figure()
     fig.add_bar(x=years, y=base, name=before, marker_color="#BFDCDB")
     fig.add_bar(x=years, y=scen, name=after, marker_color=style.RIVER)
-    fig.add_hline(
-        y=75, line_color=style.OCHRE, line_width=2, annotation_text=line_label, annotation_position="top left"
+    # The drought line is a legend entry, not a text label: a label on the plot collides with the bars.
+    fig.add_scatter(
+        x=[years[0] - 0.5, years[-1] + 0.5],
+        y=[75, 75],
+        mode="lines",
+        name=line_label,
+        line={"color": style.OCHRE, "width": 2.5},
+        hoverinfo="skip",
     )
     fig.update_layout(
         barmode="group",

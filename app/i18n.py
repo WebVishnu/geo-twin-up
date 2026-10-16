@@ -17,6 +17,8 @@ STR: dict[str, dict[str, str]] = {
         "layer_fc": "Forecast rain, next 7 days",
         "period": "Period",
         "period_days": "Last {n} days of data",
+        "period_monsoon": "Last monsoon (June to September {y})",
+        "no_rain_period": "No rain was recorded in this period, so every district shows 0 mm. Pick a longer period or the monsoon.",
         "rain_mm": "Rain (mm)",
         "forecast_mm": "Forecast rain (mm)",
         "total": "Total",
@@ -50,10 +52,12 @@ STR: dict[str, dict[str, str]] = {
         "demo_btn": "Preview with synthetic demo data",
         "demo_banner": "DEMO DATA. These numbers are synthetic and describe no real place.",
         "drought_share": "Years below 75% of normal monsoon rain",
+        "range_to": "to",
         "before": "Before",
         "after": "With your change",
         "change": "Change",
-        "ci_note": "Range shows the 90% bootstrap band over years.",
+        "ci_note": "The small range under each change is the 90% bootstrap band over years.",
+        "heavy_note": "Heavy-rain days (64.5 mm or more) are hidden here because averaging 75 districts smooths them out. Pick one district to see them.",
         "chart_ratio": "Monsoon rain as % of normal, by year",
         "line75": "75% of normal: IMD drought line",
         "year": "Year",
@@ -76,7 +80,7 @@ STR: dict[str, dict[str, str]] = {
 **What-if.** We scale observed daily rain and shift observed temperature, then recompute indicators against fixed baseline statistics. It is a sensitivity test. It never runs the forecast models, because a world with 30% less rain is outside what they learned.
 
 **Known limits.**
-- Forecast skill from past rainfall alone is real only for about 1 to 3 days. Beyond that, the forecast layer is just the weather model's own output.
+- In our 2024 to 2025 tests, a model that uses past rainfall alone beat climatology only for the next day. Adding weather-model forecasts helped clearly at 1 day, only slightly at 3 days, and not at all by 7 days. The forecast layer on the map shows the weather model's own district averages, uncorrected, and is least reliable for heavy rain.
 - District values are averages over grid cells. They can miss a local storm.
 - Heat-wave and heavy-rain thresholds follow IMD conventions as we understood them. Check them against IMD before relying on them.
 - This is not an official warning service. For warnings, use IMD.
@@ -97,6 +101,8 @@ STR: dict[str, dict[str, str]] = {
         "layer_fc": "अनुमानित वर्षा, अगले 7 दिन",
         "period": "अवधि",
         "period_days": "डेटा के आख़िरी {n} दिन",
+        "period_monsoon": "पिछला मानसून (जून से सितंबर {y})",
+        "no_rain_period": "इस अवधि में कोई वर्षा दर्ज नहीं हुई, इसलिए हर जिला 0 मिमी दिखाता है। लंबी अवधि या मानसून चुनें।",
         "rain_mm": "वर्षा (मिमी)",
         "forecast_mm": "अनुमानित वर्षा (मिमी)",
         "total": "कुल",
@@ -130,10 +136,12 @@ STR: dict[str, dict[str, str]] = {
         "demo_btn": "नकली डेमो डेटा से झलक देखें",
         "demo_banner": "डेमो डेटा। ये आँकड़े नकली हैं और किसी असली जगह के नहीं हैं।",
         "drought_share": "वे वर्ष जब मानसून की वर्षा सामान्य के 75% से कम रही",
+        "range_to": "से",
         "before": "पहले",
         "after": "आपके बदलाव के साथ",
         "change": "अंतर",
-        "ci_note": "दायरा वर्षों पर 90% बूटस्ट्रैप सीमा दिखाता है।",
+        "ci_note": "हर अंतर के नीचे छोटा दायरा वर्षों पर 90% बूटस्ट्रैप सीमा है।",
+        "heavy_note": "भारी वर्षा के दिन (64.5 मिमी या अधिक) यहाँ छिपे हैं, क्योंकि 75 जिलों का औसत उन्हें समतल कर देता है। देखने के लिए एक जिला चुनें।",
         "chart_ratio": "हर साल मानसून की वर्षा, सामान्य का %",
         "line75": "सामान्य का 75%: IMD की सूखे की रेखा",
         "year": "वर्ष",
@@ -156,7 +164,7 @@ STR: dict[str, dict[str, str]] = {
 **अगर ऐसा हो तो।** हम दर्ज की गई रोज़ की वर्षा को घटाते-बढ़ाते हैं और तापमान खिसकाते हैं, फिर तय आधार आँकड़ों के सामने सूचकांक दोबारा निकालते हैं। यह संवेदनशीलता जाँच है। यह अनुमान वाले मॉडल नहीं चलाती, क्योंकि 30% कम बारिश वाली दुनिया उनके सीखे हुए दायरे से बाहर है।
 
 **ज्ञात सीमाएँ।**
-- सिर्फ़ पिछली वर्षा से बना अनुमान लगभग 1 से 3 दिन तक ही भरोसेमंद है। उसके बाद अनुमान वाली परत मौसम मॉडल का अपना आउटपुट है।
+- हमारे 2024 से 2025 के परीक्षण में, सिर्फ़ पिछली वर्षा पर बना मॉडल केवल अगले दिन के लिए जलवायु-औसत से बेहतर रहा। मौसम मॉडल के अनुमान जोड़ने पर 1 दिन में साफ़ फ़ायदा हुआ, 3 दिन में बहुत थोड़ा, और 7 दिन तक कुछ नहीं। नक्शे की अनुमान वाली परत मौसम मॉडल के जिला-औसत मान बिना सुधार के दिखाती है, और भारी वर्षा के लिए सबसे कम भरोसेमंद है।
 - जिले के मान ग्रिड के औसत हैं। स्थानीय तूफ़ान छूट सकता है।
 - लू और भारी वर्षा की सीमाएँ IMD के नियमों के हमारे समझे रूप पर हैं। भरोसा करने से पहले IMD से मिलाएँ।
 - यह आधिकारिक चेतावनी सेवा नहीं है। चेतावनी के लिए IMD देखें।

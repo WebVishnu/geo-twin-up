@@ -20,9 +20,13 @@ def _engine(key: str, series: pd.Series, tmax: pd.Series | None) -> WhatIfEngine
 
 
 def _fmt(name: str, v: float) -> str:
+    """Format an indicator. Adding 0.0 turns -0.0 into 0.0 so tiny negatives never print as "-0.0"."""
     if pd.isna(v):
         return "-"
-    return f"{v:.0%}" if name == "jjas_ratio_to_lpa" else f"{v:.1f}" if abs(v) < 100 else f"{v:,.0f}"
+    if name == "jjas_ratio_to_lpa":
+        return f"{round(v * 100) + 0.0:.0f}%"
+    r = round(float(v), 1) + 0.0
+    return f"{r:,.1f}" if abs(r) < 100 else f"{r:,.0f}"
 
 
 def render(t) -> None:
@@ -90,7 +94,7 @@ def render(t) -> None:
         t("before"),
         t("after"),
     )
-    left, right = st.columns([1.5, 1], gap="large")
+    left, right = st.columns([1.2, 1], gap="large")
     with left:
         st.markdown(f"**{t('chart_ratio')}**")
         st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
@@ -109,13 +113,20 @@ def render(t) -> None:
             + t("change")
             + "</span></div>"
         ]
+        hidden_heavy = False
         for name in INDICATORS:
             if name not in res.summary.index:
                 continue
             r = res.summary.loc[name]
+            if name == "heavy_rain_days" and r["baseline"] == 0 and r["scenario"] == 0:
+                hidden_heavy = True  # an average over 75 districts never reaches 64.5 mm: a row of zeros says nothing
+                continue
             rows.append(
                 f"<div class='gt-row'><span class='n'>{t('ind_' + name)}</span><span class='b'>{_fmt(name, r['baseline'])}</span>"
-                f"<span class='a'>{_fmt(name, r['scenario'])}</span><span class='d'>{_fmt(name, r['delta'])}</span></div>"
+                f"<span class='a'>{_fmt(name, r['scenario'])}</span><span class='d'>{_fmt(name, r['delta'])}"
+                f"<span class='ci'>{_fmt(name, r['ci_low'])} {t('range_to')} {_fmt(name, r['ci_high'])}</span></span></div>"
             )
         st.markdown("".join(rows), unsafe_allow_html=True)
         st.caption(t("ci_note"))
+        if hidden_heavy:
+            st.caption(t("heavy_note"))
