@@ -18,6 +18,12 @@ GEO = ROOT / "data" / "external" / "up_districts.geojson"
 APP_DATA = ROOT / "app_data"  # small files written by scripts/export_app_data.py; this is all the app reads
 
 
+def _stamp(p: Path) -> int:
+    """File version for cache keys. st.cache_data only watches code, so without this a refreshed data file
+    would keep serving the old cached table until the server restarts."""
+    return p.stat().st_mtime_ns if p.exists() else 0
+
+
 def _clockwise(geom: BaseGeometry) -> BaseGeometry:
     if isinstance(geom, MultiPolygon):
         return MultiPolygon([orient(p, sign=-1.0) for p in geom.geoms])
@@ -42,9 +48,13 @@ def load_geo() -> tuple[dict[str, Any], pd.DataFrame]:
     return gj, names
 
 
-@st.cache_data(show_spinner=False)
 def load_rain() -> pd.DataFrame:
     """Daily district rain [district_id, district, date, rain_mm]."""
+    return _load_rain(_stamp(APP_DATA / "rain.parquet"))
+
+
+@st.cache_data(show_spinner=False)
+def _load_rain(stamp: int) -> pd.DataFrame:
     p = APP_DATA / "rain.parquet"
     if not p.exists():
         return pd.DataFrame(columns=["district_id", "district", "date", "rain_mm"])
@@ -53,9 +63,13 @@ def load_rain() -> pd.DataFrame:
     return df.sort_values(["district_id", "date"]).reset_index(drop=True)
 
 
-@st.cache_data(show_spinner=False)
 def load_forecast() -> tuple[pd.DataFrame, str | None]:
     """Latest forecast per district: [district_id, valid_date, lead_day, precip, tmax, tmin] and its issue date."""
+    return _load_forecast(_stamp(APP_DATA / "forecast.parquet"))
+
+
+@st.cache_data(show_spinner=False)
+def _load_forecast(stamp: int) -> tuple[pd.DataFrame, str | None]:
     p = APP_DATA / "forecast.parquet"
     if not p.exists():
         return pd.DataFrame(), None
@@ -63,9 +77,13 @@ def load_forecast() -> tuple[pd.DataFrame, str | None]:
     return fc.drop(columns=["issue_date"]), str(pd.to_datetime(fc["issue_date"].iloc[0]).date())
 
 
-@st.cache_data(show_spinner=False)
 def load_temp() -> pd.DataFrame:
     """Daily district tmax/tmin (ERA5-Land at district centre points): [district_id, date, tmax, tmin]."""
+    return _load_temp(_stamp(APP_DATA / "temp.parquet"))
+
+
+@st.cache_data(show_spinner=False)
+def _load_temp(stamp: int) -> pd.DataFrame:
     p = APP_DATA / "temp.parquet"
     if not p.exists():
         return pd.DataFrame(columns=["district_id", "date", "tmax", "tmin"])
