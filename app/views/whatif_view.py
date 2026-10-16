@@ -93,7 +93,7 @@ def render(t) -> None:
     left, right = st.columns([1.5, 1], gap="large")
     with left:
         st.markdown(f"**{t('chart_ratio')}**")
-        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
     with right:
         b, a = res.drought_share_baseline, res.drought_share_scenario
         st.markdown(

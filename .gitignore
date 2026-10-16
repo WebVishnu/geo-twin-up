@@ -13,3 +13,4 @@ data/external/*
 *.nc
 *.grd
 !data/external/up_districts.geojson
+# app_data/ IS committed (small deployable files)

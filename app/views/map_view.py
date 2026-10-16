@@ -67,7 +67,7 @@ def render(t) -> None:
     left, right = st.columns([1.55, 1], gap="large")
     with left:
         fig = charts.district_map(gj, agg, "value", unit_title, selected=sel)
-        event = st.plotly_chart(fig, on_select="rerun", selection_mode="points", key="map", use_container_width=True)
+        event = st.plotly_chart(fig, on_select="rerun", selection_mode="points", key="map", width="stretch")
         clicked = _selected_from_event(event)
         if clicked is not None and clicked != sel:
             st.session_state["sel_district"] = clicked
@@ -106,9 +106,7 @@ def render(t) -> None:
         )
         d, v = daily(sel)
         st.markdown(f"**{t('daily_rain')}**")
-        st.plotly_chart(
-            charts.daily_bars(d, v, t("rain_mm")), use_container_width=True, config={"displayModeBar": False}
-        )
+        st.plotly_chart(charts.daily_bars(d, v, t("rain_mm")), width="stretch", config={"displayModeBar": False})
         if layer == "fc":
             r = fc[(fc.district_id == sel) & fc.lead_day.between(1, 7)]
             st.caption(t("temp_range", lo=float(r.tmin.min()), hi=float(r.tmax.max())))
