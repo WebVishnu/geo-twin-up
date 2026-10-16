@@ -80,10 +80,27 @@ def temp_series(temp: pd.DataFrame, district_id: int | None) -> pd.Series:
     return s.sort_index()
 
 
-def temp_ready(temp: pd.DataFrame, rain_series: pd.Series, min_years: int = 30) -> bool:
-    """Temperature is usable only if it spans (almost) the same years as rainfall and has enough baseline."""
+def temp_ready(
+    temp: pd.DataFrame,
+    rain_series: pd.Series,
+    district_id: int | None = None,
+    min_years: int = 30,
+    n_districts: int = 75,
+) -> bool:
+    """Temperature is usable only if it has enough baseline years for the chosen area.
+
+    For a single district that district must have the years. For the UP average, ALL districts must be present,
+    otherwise the "UP average" would silently be the average of whichever districts happen to be downloaded.
+    """
     if temp.empty:
         return False
+    if district_id is None:
+        if temp["district_id"].nunique() < n_districts:
+            return False
+    else:
+        temp = temp[temp["district_id"] == district_id]
+        if temp.empty:
+            return False
     ty = set(pd.DatetimeIndex(pd.to_datetime(temp["date"])).year)
     ry = set(pd.DatetimeIndex(rain_series.index).year)
     return len(ty & ry) >= min_years

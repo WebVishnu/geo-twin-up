@@ -56,7 +56,7 @@ def render(t) -> None:
         tmax = data.temp_series(temp, None) if data.temp_ready(temp, series) else None
     else:
         series, key = data.district_series(rain, area), f"d{area}"
-        tmax = data.temp_series(temp, area) if data.temp_ready(temp, series) else None
+        tmax = data.temp_series(temp, area) if data.temp_ready(temp, series, area) else None
     key += "T" if tmax is not None else "R"
 
     st.session_state.setdefault("dp", 0)
