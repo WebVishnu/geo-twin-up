@@ -3,11 +3,17 @@
 Thresholds follow IMD conventions as reported in the research notes. VERIFY against the official
 IMD pages before presenting: heat-wave criteria and the 64.5 mm heavy-rain class in particular.
 """
+
 from __future__ import annotations
 
 import pandas as pd
 
 HEAVY_RAIN_MM = 64.5
+
+
+def _dt(s: pd.Series) -> pd.DatetimeIndex:
+    """Series index as a DatetimeIndex (satisfies the type checker; raises if not datetime-like)."""
+    return pd.DatetimeIndex(s.index)
 
 
 def drought_class(rain_ratio_to_lpa: float) -> str:
@@ -17,22 +23,22 @@ def drought_class(rain_ratio_to_lpa: float) -> str:
     return "severe drought" if rain_ratio_to_lpa < 0.5 else "moderate drought"
 
 
-def seasonal_ratio(daily: pd.Series, lpa_mm: float, months=(6, 7, 8, 9)) -> float:
+def seasonal_ratio(daily: pd.Series, lpa_mm: float, months: tuple[int, ...] = (6, 7, 8, 9)) -> float:
     """Monsoon (JJAS) total as a fraction of the long-period average."""
-    s = daily[daily.index.month.isin(months)].sum()
+    s = daily[_dt(daily).month.isin(months)].sum()
     return float(s / lpa_mm)
 
 
 def rx1day(daily: pd.Series) -> pd.Series:
-    return daily.groupby(daily.index.year).max()
+    return daily.groupby(_dt(daily).year).max()
 
 
 def rx5day(daily: pd.Series) -> pd.Series:
-    return daily.rolling(5, min_periods=5).sum().groupby(daily.index.year).max()
+    return daily.rolling(5, min_periods=5).sum().groupby(_dt(daily).year).max()
 
 
 def heavy_rain_days(daily: pd.Series, thr: float = HEAVY_RAIN_MM) -> pd.Series:
-    return (daily >= thr).groupby(daily.index.year).sum()
+    return (daily >= thr).groupby(_dt(daily).year).sum()
 
 
 def heatwave_days(tmax: pd.Series, normal_tmax: pd.Series) -> pd.Series:

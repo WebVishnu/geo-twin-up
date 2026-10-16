@@ -1,4 +1,5 @@
 """Reference forecasts every model must beat (ticket T8)."""
+
 from __future__ import annotations
 
 import numpy as np

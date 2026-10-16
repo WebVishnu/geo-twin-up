@@ -4,6 +4,7 @@ Rain is mostly zero and heavy-tailed, so: (1) classifier P(rain >= wet_mm), (2) 
 log1p(amount) trained on wet days only. Expected rain = P * E[amount | wet]. One model per lead.
 Hyper-parameters are tuned on the VALIDATION split only; the test split is touched once.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -16,13 +17,28 @@ WET_MM = 1.0
 
 
 class HurdleXGB:
-    def __init__(self, wet_mm: float = WET_MM, seed: int = 42, n_estimators: int = 300, max_depth: int = 5, learning_rate: float = 0.05):
+    def __init__(
+        self,
+        wet_mm: float = WET_MM,
+        seed: int = 42,
+        n_estimators: int = 300,
+        max_depth: int = 5,
+        learning_rate: float = 0.05,
+    ):
         self.wet_mm, self.seed = wet_mm, seed
-        common = dict(n_estimators=n_estimators, max_depth=max_depth, learning_rate=learning_rate, subsample=0.8, colsample_bytree=0.8, random_state=seed, n_jobs=-1)
+        common = {
+            "n_estimators": n_estimators,
+            "max_depth": max_depth,
+            "learning_rate": learning_rate,
+            "subsample": 0.8,
+            "colsample_bytree": 0.8,
+            "random_state": seed,
+            "n_jobs": -1,
+        }
         self.clf = xgb.XGBClassifier(eval_metric="logloss", **common)
         self.reg = xgb.XGBRegressor(**common)
 
-    def fit(self, X: pd.DataFrame, y: np.ndarray) -> "HurdleXGB":
+    def fit(self, X: pd.DataFrame, y: np.ndarray) -> HurdleXGB:
         y = np.asarray(y, float)
         wet = y >= self.wet_mm
         self.clf.fit(X, wet.astype(int))

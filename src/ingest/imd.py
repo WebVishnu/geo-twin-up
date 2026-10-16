@@ -3,11 +3,11 @@
 IMD files are yearly .grd binaries (0.25 deg, -999 = missing). `scripts/download_imd.py`
 caches them in data/raw/imd/. This module reads them as xarray, clipped to the UP bbox.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
 
-import numpy as np
 import xarray as xr
 
 UP_BBOX = {"lat_min": 23.8, "lat_max": 30.4, "lon_min": 77.1, "lon_max": 84.7}

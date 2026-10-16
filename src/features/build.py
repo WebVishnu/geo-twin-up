@@ -3,12 +3,13 @@
 One row = (district, issue_date, lead). Issue date t is the END of day t: every feature uses
 data from day t or earlier; the target is rain on day t+lead.
 """
+
 from __future__ import annotations
 
 import numpy as np
 import pandas as pd
 
-LAGS = list(range(0, 14))          # rain on day t, t-1, ... t-13
+LAGS = list(range(14))  # rain on day t, t-1, ... t-13
 ROLL = [3, 7, 14, 30]
 DEFAULT_LEADS = (1, 2, 3, 5, 7)
 FEATURE_COLS = (
@@ -34,12 +35,11 @@ def build_features(
     P = to_wide(df, value)
     state = P.mean(axis=1)
     cen = centroids.set_index("district_id")
-    doy = P.index.dayofyear.values
     base = {}
     for l in LAGS:
         base[f"rain_lag{l}"] = P.shift(l)
     for w in ROLL:
-        base[f"rain_sum{w}"] = P.rolling(w, min_periods=w).sum()   # window ends at t (inclusive)
+        base[f"rain_sum{w}"] = P.rolling(w, min_periods=w).sum()  # window ends at t (inclusive)
     frames = []
     for k in leads:
         y = P.shift(-k)

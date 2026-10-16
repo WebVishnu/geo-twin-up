@@ -6,13 +6,14 @@ NWP-correction (MOS) model in T10.
 
 Run:  python -m src.ingest.forecast_logger [--force] [--step 0.25]
 """
+
 from __future__ import annotations
 
 import argparse
 import datetime as dt
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 import numpy as np
 import pandas as pd
@@ -52,7 +53,7 @@ def fetch_batch(points: list[tuple[float, float]], session: requests.Session | N
             return data if isinstance(data, list) else [data]
         except Exception as e:  # noqa: BLE001 - retry on any network/HTTP error
             last_err = e
-            time.sleep(2 ** attempt * 2)
+            time.sleep(2**attempt * 2)
     raise RuntimeError(f"Open-Meteo request failed after retries: {last_err}")
 
 
@@ -79,7 +80,21 @@ def to_frame(results: list[dict], issue_date: dt.date, points: list[tuple[float,
     out["issue_date"] = issue_date
     out["lead_day"] = (pd.to_datetime(out["valid_date"]) - pd.Timestamp(issue_date)).dt.days
     out["source"] = "open-meteo"
-    return out[["issue_date", "lead_day", "valid_date", "grid_lat", "grid_lon", "lat", "lon", "precip", "tmax", "tmin", "source"]]
+    return out[
+        [
+            "issue_date",
+            "lead_day",
+            "valid_date",
+            "grid_lat",
+            "grid_lon",
+            "lat",
+            "lon",
+            "precip",
+            "tmax",
+            "tmin",
+            "source",
+        ]
+    ]
 
 
 def run(

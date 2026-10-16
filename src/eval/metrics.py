@@ -1,4 +1,5 @@
 """Forecast verification metrics (ticket T8). Rain needs threshold scores, not just RMSE."""
+
 from __future__ import annotations
 
 import numpy as np

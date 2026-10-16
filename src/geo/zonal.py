@@ -4,6 +4,7 @@ Area-weighted zonal mean: each grid cell is a 0.25 deg box centred on its lat/lo
 in a district is the intersected area (equal-area CRS). Cells with NaN are dropped and the
 remaining weights renormalised, so a district half over missing cells still gets a value.
 """
+
 from __future__ import annotations
 
 import geopandas as gpd
@@ -32,19 +33,21 @@ def build_weights(districts: gpd.GeoDataFrame, lat: np.ndarray, lon: np.ndarray,
     return W
 
 
-def district_series(da: xr.DataArray, districts: gpd.GeoDataFrame, W: np.ndarray | None = None, name: str = "value") -> pd.DataFrame:
+def district_series(
+    da: xr.DataArray, districts: gpd.GeoDataFrame, W: np.ndarray | None = None, name: str = "value"
+) -> pd.DataFrame:
     """Aggregate a (time, lat, lon) DataArray to long table [district_id, district, date, <name>, coverage]."""
     da = da.transpose("time", "lat", "lon")
     if W is None:
         W = build_weights(districts, da["lat"].values, da["lon"].values)
     V = da.values.reshape(da.sizes["time"], -1).astype("float64")
     valid = ~np.isnan(V)
-    num = np.where(valid, V, 0.0) @ W.T            # (T, D)
-    den = valid.astype("float64") @ W.T            # (T, D) area with data
+    num = np.where(valid, V, 0.0) @ W.T  # (T, D)
+    den = valid.astype("float64") @ W.T  # (T, D) area with data
     with np.errstate(invalid="ignore", divide="ignore"):
         mean = np.where(den > 0, num / den, np.nan)
-    total = W.sum(axis=1)                          # (D,) district area covered by the grid box
-    cov = np.where(total > 0, den / total, 0.0)    # fraction of district area with valid data
+    total = W.sum(axis=1)  # (D,) district area covered by the grid box
+    cov = np.where(total > 0, den / total, 0.0)  # fraction of district area with valid data
     dates = pd.to_datetime(da["time"].values)
     out = pd.DataFrame(
         {

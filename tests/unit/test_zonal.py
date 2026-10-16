@@ -18,10 +18,14 @@ def make_districts():
 
 
 def make_grid(value, ntime=3):
-    lat = np.arange(26.125, 27.0, 0.25)   # cell centres of 0.25 deg boxes covering 26-27
+    lat = np.arange(26.125, 27.0, 0.25)  # cell centres of 0.25 deg boxes covering 26-27
     lon = np.arange(80.125, 82.0, 0.25)
     data = np.full((ntime, len(lat), len(lon)), value, dtype="float64")
-    return xr.DataArray(data, coords={"time": pd.date_range("2023-01-01", periods=ntime), "lat": lat, "lon": lon}, dims=("time", "lat", "lon"))
+    return xr.DataArray(
+        data,
+        coords={"time": pd.date_range("2023-01-01", periods=ntime), "lat": lat, "lon": lon},
+        dims=("time", "lat", "lon"),
+    )
 
 
 def test_constant_field_preserved():
@@ -42,7 +46,8 @@ def test_gradient_gives_different_districts():
     da = make_grid(0.0)
     da.values[:] = (da.lon.values[None, None, :] > 81).astype(float) * 10  # east half = 10
     out = zonal.district_series(da, make_districts(), name="rain")
-    a = out[out.district == "A"].rain.mean(); b = out[out.district == "B"].rain.mean()
+    a = out[out.district == "A"].rain.mean()
+    b = out[out.district == "B"].rain.mean()
     assert a < 1e-6 and abs(b - 10) < 1e-6
 
 
@@ -51,7 +56,7 @@ def test_nan_cells_are_dropped_not_zeroed():
     da.values[:, :, :2] = np.nan  # west half of district A has no data
     out = zonal.district_series(da, make_districts(), name="rain")
     a = out[out.district == "A"]
-    assert np.allclose(a.rain, 4.0)            # mean of valid cells, not pulled to 0
+    assert np.allclose(a.rain, 4.0)  # mean of valid cells, not pulled to 0
     assert np.allclose(a.coverage, 0.5, atol=0.02)
 
 

@@ -8,7 +8,7 @@ from src.models import xgb_rain
 def toy(n=3000, seed=1):
     rng = np.random.default_rng(seed)
     X = pd.DataFrame(rng.random((n, len(FEATURE_COLS))), columns=FEATURE_COLS)
-    wet = rng.random(n) < (0.1 + 0.7 * X["rain_lag0"])      # signal: yesterday predicts today
+    wet = rng.random(n) < (0.1 + 0.7 * X["rain_lag0"])  # signal: yesterday predicts today
     y = np.where(wet, rng.gamma(2.0, 6.0, n) * (0.5 + X["rain_lag0"]), 0.0)
     return X, y
 

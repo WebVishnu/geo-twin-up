@@ -1,9 +1,16 @@
-def test_imports():
-    import numpy, pandas, scipy, xarray, yaml  # noqa: F401
+import importlib
+
+import pytest
 
 
-def test_config_loads():
+@pytest.mark.parametrize("module", ["numpy", "pandas", "scipy", "xarray", "yaml", "xgboost", "geopandas"])
+def test_imports(module: str) -> None:
+    importlib.import_module(module)
+
+
+def test_config_loads() -> None:
     import yaml
 
-    cfg = yaml.safe_load(open("configs/base.yaml", encoding="utf-8"))
+    with open("configs/base.yaml", encoding="utf-8") as fh:
+        cfg = yaml.safe_load(fh)
     assert cfg["region"]["name"] == "Uttar Pradesh"

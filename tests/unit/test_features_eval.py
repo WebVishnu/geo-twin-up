@@ -24,10 +24,10 @@ def test_no_future_information_in_features():
     for _ in range(200):
         r = f.sample(1, random_state=_).iloc[0]
         t, dist = r.issue_date, int(r.district_id)
-        assert r.rain_lag0 == P.loc[t, dist]                               # today
-        assert r.rain_lag3 == P.loc[t - pd.Timedelta(days=3), dist]        # past
-        assert r.y == P.loc[t + pd.Timedelta(days=int(r.lead)), dist]      # target
-        assert np.isclose(r.rain_sum7, P.loc[t - pd.Timedelta(days=6): t, dist].sum())  # window ends at t
+        assert r.rain_lag0 == P.loc[t, dist]  # today
+        assert r.rain_lag3 == P.loc[t - pd.Timedelta(days=3), dist]  # past
+        assert r.y == P.loc[t + pd.Timedelta(days=int(r.lead)), dist]  # target
+        assert np.isclose(r.rain_sum7, P.loc[t - pd.Timedelta(days=6) : t, dist].sum())  # window ends at t
     assert (f.target_date > f.issue_date).all()
 
 
@@ -36,7 +36,7 @@ def test_changing_the_future_does_not_change_features():
     f1 = build.build_features(df, cen, leads=(2,))
     df2 = df.copy()
     cut = pd.Timestamp("2024-06-01")
-    df2.loc[df2.date > cut, "rain_mm"] += 100.0     # tamper with the future only
+    df2.loc[df2.date > cut, "rain_mm"] += 100.0  # tamper with the future only
     f2 = build.build_features(df2, cen, leads=(2,))
     key = ["district_id", "issue_date"]
     a = f1[f1.issue_date <= cut].set_index(key)[build.FEATURE_COLS].sort_index()
@@ -49,7 +49,12 @@ def test_split_order_and_no_overlap():
     f = build.build_features(df, cen, leads=(1, 7))
     f["split"] = splits.assign_split(f.target_date, val_years=[2023], test_years=[2024, 2025])
     yr = f.target_date.dt.year
-    assert yr[f.split == "train"].max() < yr[f.split == "val"].min() <= yr[f.split == "val"].max() < yr[f.split == "test"].min()
+    assert (
+        yr[f.split == "train"].max()
+        < yr[f.split == "val"].min()
+        <= yr[f.split == "val"].max()
+        < yr[f.split == "test"].min()
+    )
     assert set(f.split) <= {"train", "val", "test", "gap"}
 
 
@@ -58,7 +63,7 @@ def test_climatology_uses_train_years_only():
     W = build.to_wide(df)
     c1 = baselines.fit_climatology(W, train_years=[2019, 2020, 2021])
     W2 = W.copy()
-    W2.loc[W2.index.year >= 2023] += 500           # corrupt non-train years
+    W2.loc[W2.index.year >= 2023] += 500  # corrupt non-train years
     c2 = baselines.fit_climatology(W2, train_years=[2019, 2020, 2021])
     pd.testing.assert_frame_equal(c1, c2)
 
