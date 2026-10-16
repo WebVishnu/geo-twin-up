@@ -1,0 +1,20 @@
+# Lower bounds only for now; pin exact versions after the T2 smoke test passes (pip freeze > requirements.lock).
+numpy>=1.26
+pandas>=2.2
+pyarrow>=15
+xarray>=2024.1
+netcdf4>=1.6
+scipy>=1.12
+scikit-learn>=1.4
+xgboost>=2.0
+requests>=2.31
+pyyaml>=6.0
+pandera>=0.19
+imdlib>=0.3.1
+earthaccess>=0.9
+geopandas>=0.14
+streamlit>=1.35
+plotly>=5.20
+duckdb>=1.0
+pytest>=8.0
+# LSTM (T11): install later, e.g. torch (CPU)

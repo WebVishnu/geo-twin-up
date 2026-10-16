@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.pytest_cache/
+.ipynb_checkpoints/
+data/raw/*
+data/interim/
+data/processed/
+data/external/
+!data/raw/forecast_log/
+!data/raw/forecast_log/.gitkeep
+*.nc
+*.grd
