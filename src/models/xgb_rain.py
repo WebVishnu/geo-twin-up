@@ -58,20 +58,25 @@ class HurdleXGB:
         return np.asarray(self.predict_proba_wet(X) * self.predict_amount_if_wet(X), dtype=np.float64)
 
 
-def fit_per_lead(feats: pd.DataFrame, train_mask: np.ndarray, **kw: Any) -> dict[int, HurdleXGB]:
+def fit_per_lead(
+    feats: pd.DataFrame, train_mask: np.ndarray, cols: list[str] | None = None, **kw: Any
+) -> dict[int, HurdleXGB]:
+    """One hurdle model per lead day. `cols` defaults to the lag/seasonal features; MOS adds the NWP column."""
+    use = cols or FEATURE_COLS
     models: dict[int, HurdleXGB] = {}
     for k, g in feats[train_mask].groupby("lead"):
-        models[int(str(k))] = HurdleXGB(**kw).fit(g[FEATURE_COLS], g["y"].to_numpy())
+        models[int(str(k))] = HurdleXGB(**kw).fit(g[use], g["y"].to_numpy())
     return models
 
 
-def predict_per_lead(models: dict[int, HurdleXGB], feats: pd.DataFrame) -> pd.DataFrame:
+def predict_per_lead(models: dict[int, HurdleXGB], feats: pd.DataFrame, cols: list[str] | None = None) -> pd.DataFrame:
     """Returns feats[[district_id, issue_date, lead]] + p_wet + rain_mm_pred, aligned to feats' rows."""
+    use = cols or FEATURE_COLS
     out = feats[["district_id", "issue_date", "lead"]].copy()
     out["p_wet"], out["rain_mm_pred"] = np.nan, np.nan
     for k, m in models.items():
         idx = feats.index[feats["lead"] == k]
-        X = feats.loc[idx, FEATURE_COLS]
+        X = feats.loc[idx, use]
         out.loc[idx, "p_wet"] = m.predict_proba_wet(X)
         out.loc[idx, "rain_mm_pred"] = m.predict(X)
     return out
