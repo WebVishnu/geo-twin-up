@@ -24,21 +24,25 @@ def render(t) -> None:
     rain = data.load_rain()
     fc, issued = data.load_forecast()
 
-    layer = st.radio(
-        t("layer"),
-        ["obs", "fc"],
-        format_func=lambda k: t("layer_obs") if k == "obs" else t("layer_fc"),
-        horizontal=True,
-    )
+    # Controls share one row so the map (the main thing) is visible without scrolling.
+    c_layer, c_period = st.columns([1.1, 1], gap="large")
+    with c_layer:
+        layer = st.radio(
+            t("layer"),
+            ["obs", "fc"],
+            format_func=lambda k: t("layer_obs") if k == "obs" else t("layer_fc"),
+            horizontal=True,
+        )
 
     if layer == "obs":
         if rain.empty:
             st.info(t("no_obs"))
             return
         last = pd.to_datetime(rain["date"]).max()
-        span = st.select_slider(
-            t("period"), options=[7, 14, 30, 60, 90], value=30, format_func=lambda n: t("period_days", n=n)
-        )
+        with c_period:
+            span = st.select_slider(
+                t("period"), options=[7, 14, 30, 60, 90], value=30, format_func=lambda n: t("period_days", n=n)
+            )
         win = rain[pd.to_datetime(rain["date"]) > last - pd.Timedelta(days=span)]
         agg = (
             win.groupby(["district_id", "district"], as_index=False)["rain_mm"]

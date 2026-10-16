@@ -25,10 +25,10 @@ html, body, [class*="css"], .stApp, button, input, textarea, select {{
 .stApp {{ background: {PAPER}; color: {INK}; }}
 header[data-testid="stHeader"] {{ background: transparent; }}
 #MainMenu, footer {{ visibility: hidden; }}
-.block-container {{ max-width: 1280px; padding-top: 1.6rem; padding-bottom: 3rem; }}
-h1 {{ font-weight: 800; letter-spacing: -0.01em; font-size: 2.1rem; line-height: 1.15; margin-bottom: .2rem; }}
+.block-container {{ max-width: 1280px; padding-top: 1rem; padding-bottom: 3rem; }}
+h1 {{ font-weight: 800; letter-spacing: -0.01em; font-size: 1.9rem; line-height: 1.15; margin-bottom: .1rem; padding-top: .4rem; }}
 h2, h3 {{ font-weight: 600; color: {INK}; }}
-.gt-tagline {{ color: {MUTED}; max-width: 62ch; font-size: 1.05rem; line-height: 1.5; margin: 0 0 1.2rem 0; }}
+.gt-tagline {{ color: {MUTED}; max-width: 70ch; font-size: 1rem; line-height: 1.45; margin: 0 0 .6rem 0; }}
 .gt-banner {{ border-left: 4px solid {OCHRE}; background: #FBF4E4; padding: .7rem 1rem; margin: .4rem 0 1.2rem 0;
   color: {INK}; font-weight: 600; max-width: 78ch; }}
 .gt-demo {{ border-left-color: {HEAT}; background: #FBE9E6; }}
