@@ -85,3 +85,16 @@ def test_engine_never_imports_ml_models() -> None:
     imported = {n.module for n in ast.walk(tree) if isinstance(n, ast.ImportFrom) and n.module}
     imported |= {a.name for n in ast.walk(tree) if isinstance(n, ast.Import) for a in n.names}
     assert not any(m.startswith(("src.models", "xgboost", "tensorflow", "torch")) for m in imported)
+
+
+def test_drought_share_band_brackets_the_estimate_and_is_reproducible(engine: WhatIfEngine) -> None:
+    a = engine.run(Scenario(rain_factor=-0.2))
+    b = engine.run(Scenario(rain_factor=-0.2))
+    assert a.drought_ci_scenario == b.drought_ci_scenario
+    lo, hi = a.drought_ci_scenario
+    assert lo <= a.drought_share_scenario <= hi
+    dlo, dhi = a.drought_ci_delta
+    assert dlo <= a.drought_share_scenario - a.drought_share_baseline <= dhi
+    # zero perturbation: the delta band must be exactly zero
+    z = engine.run(Scenario())
+    assert z.drought_ci_delta == (0.0, 0.0)

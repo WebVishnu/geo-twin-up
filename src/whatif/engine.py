@@ -61,6 +61,10 @@ class WhatIfResult:
     summary: pd.DataFrame  # per indicator: baseline, scenario, delta, ci_low, ci_high
     drought_share_baseline: float = field(default=0.0)
     drought_share_scenario: float = field(default=0.0)
+    # 90% bootstrap bands (5th..95th percentile) over years for the share of drought years.
+    drought_ci_baseline: tuple[float, float] = field(default=(float("nan"), float("nan")))
+    drought_ci_scenario: tuple[float, float] = field(default=(float("nan"), float("nan")))
+    drought_ci_delta: tuple[float, float] = field(default=(float("nan"), float("nan")))
 
 
 class WhatIfEngine:
@@ -163,6 +167,7 @@ class WhatIfEngine:
                     "ci_high": hi,
                 }
             )
+        b_ci, s_ci, d_ci = self._boot_share(base["drought"].to_numpy(bool), pert["drought"].to_numpy(bool))
         return WhatIfResult(
             label=LABEL,
             scenario=scn,
@@ -171,4 +176,25 @@ class WhatIfEngine:
             summary=pd.DataFrame(rows).set_index("indicator"),
             drought_share_baseline=float(base["drought"].mean()),
             drought_share_scenario=float(pert["drought"].mean()),
+            drought_ci_baseline=b_ci,
+            drought_ci_scenario=s_ci,
+            drought_ci_delta=d_ci,
         )
+
+    def _boot_share(
+        self, flags_base: np.ndarray, flags_scen: np.ndarray
+    ) -> tuple[tuple[float, float], tuple[float, float], tuple[float, float]]:
+        """90% bootstrap bands for the share of drought years, resampling years (paired) with replacement."""
+        n = len(flags_base)
+        if n == 0:
+            nan = (float("nan"), float("nan"))
+            return nan, nan, nan
+        rng = np.random.default_rng(self.seed)
+        idx = rng.integers(0, n, size=(self.n_boot, n))
+        sb, ss = flags_base[idx].mean(axis=1), flags_scen[idx].mean(axis=1)
+
+        def band(x: np.ndarray) -> tuple[float, float]:
+            lo, hi = np.percentile(x, [5, 95])
+            return float(lo), float(hi)
+
+        return band(sb), band(ss), band(ss - sb)

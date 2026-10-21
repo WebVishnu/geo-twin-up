@@ -67,11 +67,13 @@ def evaluate(
     leads: tuple[int, ...] = (1, 3, 7),
     n_estimators: int = 200,
     seed: int = 42,
+    collect: list[pd.DataFrame] | None = None,
 ) -> pd.DataFrame:
     """Fit per-lead hurdle models on train years and score val/test against persistence and climatology.
 
     Returns one row per (split, lead, forecast) with RMSE, MAE, correlation, CSI at the rain thresholds,
     RMSE skill vs climatology, and for the model a Brier skill score for the event rain >= 1 mm.
+    If `collect` is a list, the per-row predictions of every split/lead are appended to it (for CIs and diagnostics).
     """
     feats = build.build_features(rain, centroids, leads=leads)
     masks = _split_masks(feats, plan)
@@ -109,6 +111,23 @@ def evaluate(
             tab.insert(0, "split", split)
             tab["n"] = len(y)
             rows.append(tab)
+            if collect is not None:
+                collect.append(
+                    pd.DataFrame(
+                        {
+                            "split": split,
+                            "lead": k,
+                            "district_id": s["district_id"].to_numpy(),
+                            "target_date": s["target_date"].to_numpy(),
+                            "y": y,
+                            "persistence": baselines.persistence(s),
+                            "climatology": baselines.climatology(s, clim),
+                            "xgb_hurdle": pred["rain_mm_pred"].to_numpy(),
+                            "p_wet": pred["p_wet"].to_numpy(),
+                            "p_ref": p_ref,
+                        }
+                    )
+                )
     if not rows:
         raise ValueError("no rows to evaluate: check that val/test years contain data")
     return pd.concat(rows, ignore_index=True)

@@ -66,6 +66,7 @@ def evaluate(
     leads: tuple[int, ...] = (1, 3, 7),
     n_estimators: int = 150,
     seed: int = 42,
+    collect: list[pd.DataFrame] | None = None,
 ) -> pd.DataFrame:
     """Score all six forecasts on the test window; one row per (lead, forecast)."""
     feats = attach_nwp(build.build_features(rain, centroids, leads=leads), nwp)
@@ -115,6 +116,27 @@ def evaluate(
         tab.insert(0, "lead", k)
         tab["n"] = len(y)
         rows.append(tab)
+        if collect is not None:
+            collect.append(
+                pd.DataFrame(
+                    {
+                        "lead": k,
+                        "district_id": s["district_id"].to_numpy(),
+                        "target_date": s["target_date"].to_numpy(),
+                        "y": y,
+                        "persistence": baselines.persistence(s),
+                        "climatology": baselines.climatology(s, clim),
+                        "raw_nwp": s["nwp_precip"].to_numpy(),
+                        "xgb_lag_full": pl["rain_mm_pred"].to_numpy(),
+                        "xgb_lag_recent": pr["rain_mm_pred"].to_numpy(),
+                        "xgb_mos": pm["rain_mm_pred"].to_numpy(),
+                        "p_lag_full": pl["p_wet"].to_numpy(),
+                        "p_lag_recent": pr["p_wet"].to_numpy(),
+                        "p_mos": pm["p_wet"].to_numpy(),
+                        "p_ref": p_ref,
+                    }
+                )
+            )
     if not rows:
         raise ValueError("no test rows with NWP available: check the NWP download and the test window")
     return pd.concat(rows, ignore_index=True)
